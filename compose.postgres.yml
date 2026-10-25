@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kpd_demo
+      POSTGRES_USER: kpd_demo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kpd_demo -d kpd_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 1g
+    cpus: 1.0
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      KPD_ENVIRONMENT: demo-postgres
+      KPD_DATABASE_URL: postgresql+psycopg://kpd_demo:${POSTGRES_PASSWORD}@db:5432/kpd_demo
+      KPD_COOKIE_SECURE: "false"
+      KPD_CORS_ORIGINS: http://127.0.0.1:5173,http://localhost:5173
+    command: ["sh", "-c", "alembic upgrade head && python -m app.seed && python -m uvicorn app.main:app --host 0.0.0.0 --port 8010"]
+    ports:
+      - "127.0.0.1:8010:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/api/v1/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    mem_limit: 512m
+    cpus: 1.0
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:

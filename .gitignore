@@ -1,0 +1,51 @@
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.compose.example
+secrets/
+*.secret
+*.pem
+*.key
+
+# Local runtimes and dependency trees
+.venv/
+venv/
+node_modules/
+
+# Python caches, test output and coverage
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+coverage.xml
+
+# Frontend generated output
+dist/
+.vite/
+playwright-report/
+test-results/
+
+# Local runtime state, databases, backups and traces
+data/
+backups/
+.run/
+.ci-verify-tmp/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+*.pid
+*.trace
+trace.zip
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
