@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const runtimeEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
 const apiTarget = runtimeEnv.KPD_E2E_API_TARGET ?? "http://127.0.0.1:8010";
@@ -35,6 +35,11 @@ async function openNavigation(page: Page, name: string) {
 async function logout(page: Page) {
   await page.getByRole("button", { name: "Выйти" }).click();
   await expect(page).toHaveURL(/\/login$/);
+}
+
+async function readNumericCount(locator: Locator) {
+  await expect(locator).toHaveText(/^\d+$/);
+  return Number(await locator.textContent());
 }
 
 test("начальник смены видит живую сводку и отчёт", async ({ page }, testInfo) => {
@@ -200,8 +205,7 @@ test("личный счётчик и последние сканы сохран�
 
   await loginAs(page, "solder");
   const primaryCount = page.getByTestId("worker-primary-count");
-  await expect(primaryCount).toHaveText(/^\d+$/);
-  const before = Number(await primaryCount.textContent());
+  const before = await readNumericCount(primaryCount);
   const input = page.getByLabel(/QR детали/);
   await input.fill(qr);
   await input.press("Enter");
@@ -271,8 +275,10 @@ test("ОТК атомарно фиксирует брак, открывает п
 
   async function scanAs(username: string, rework: boolean) {
     await loginAs(page, username);
-    const primaryBefore = Number(await page.getByTestId("worker-primary-count").textContent());
-    const reworkBefore = Number(await page.getByTestId("worker-rework-count").textContent());
+    const primaryCount = page.getByTestId("worker-primary-count");
+    const reworkCount = page.getByTestId("worker-rework-count");
+    const primaryBefore = await readNumericCount(primaryCount);
+    const reworkBefore = await readNumericCount(reworkCount);
     const input = page.getByLabel(/QR детали/);
     await input.fill(qr);
     if (rework) {
@@ -284,8 +290,8 @@ test("ОТК атомарно фиксирует брак, открывает п
     const counts = {
       primaryBefore,
       reworkBefore,
-      primaryAfter: Number(await page.getByTestId("worker-primary-count").textContent()),
-      reworkAfter: Number(await page.getByTestId("worker-rework-count").textContent()),
+      primaryAfter: await readNumericCount(primaryCount),
+      reworkAfter: await readNumericCount(reworkCount),
     };
     await logout(page);
     return counts;
@@ -300,7 +306,7 @@ test("ОТК атомарно фиксирует брак, открывает п
   await page.screenshot({ path: testInfo.outputPath("qc-workspace.png"), fullPage: true });
   await page.screenshot({ path: "../docs/assets/mvp-qc.png", fullPage: true });
   const checked = page.getByTestId("qc-checked-count");
-  const checkedBefore = Number(await checked.textContent());
+  const checkedBefore = await readNumericCount(checked);
   await page.getByLabel("QR узла или изделия").fill(qr);
   await page.getByRole("button", { name: "Брак", exact: true }).click();
   await page.getByLabel("Причина брака").selectOption("DEMO-ASSEMBLY");
@@ -323,8 +329,8 @@ test("ОТК атомарно фиксирует брак, открывает п
   expect(assemblyAfterRework.reworkAfter).toBe(assemblyAfterPrimary.reworkAfter + 1);
 
   await loginAs(page, "qc");
-  const checkedBeforeReinspection = Number(await page.getByTestId("qc-checked-count").textContent());
-  const reinspectionsBefore = Number(await page.getByTestId("qc-reinspection-count").textContent());
+  const checkedBeforeReinspection = await readNumericCount(page.getByTestId("qc-checked-count"));
+  const reinspectionsBefore = await readNumericCount(page.getByTestId("qc-reinspection-count"));
   await page.getByLabel("QR узла или изделия").fill(qr);
   await page.getByRole("button", { name: "Годен", exact: true }).click();
   await expect(page.locator('.qc-current-result[data-status="ACCEPTED"]')).toContainText("Годен · повторно");
@@ -337,7 +343,7 @@ test("ОТК очищает только matching terminal reject и сохра�
   test.skip(testInfo.project.name !== "desktop", "Мутационный QC-сценарий выполняется один раз");
   await loginAs(page, "qc");
   const checked = page.getByTestId("qc-checked-count");
-  const before = Number(await checked.textContent());
+  const before = await readNumericCount(checked);
   const input = page.getByLabel("QR узла или изделия");
   await input.fill(`DEMO-UNKNOWN-QC-${Date.now()}`);
   await page.getByRole("button", { name: "Годен", exact: true }).click();
@@ -396,7 +402,7 @@ test("потерянный ответ ОТК восстанавливается 
 
   await loginAs(page, "qc");
   const count = page.getByTestId("qc-checked-count");
-  const before = Number(await count.textContent());
+  const before = await readNumericCount(count);
   let serverStatus = 0;
   let statusLookupsBeforeReload = 0;
   await page.route("**/api/v1/qc-inspections/*/status", async (route) => {

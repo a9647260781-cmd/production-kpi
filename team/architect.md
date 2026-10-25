@@ -131,3 +131,9 @@
 - README больше не содержит мгновенно устаревающее утверждение об отсутствии remote; добавлены localhost-only warning, граница hosted CI и явный статус отсутствия open-source license. `.gitattributes` фиксирует endings Windows launch scripts и binary media.
 - Это подготовка публичных исходников, не production rollout и не допуск к недоверенному hosted demo. Remote/push выполняет `/root`; после push нужно проверить первый hosted Actions run.
 
+## 25 октября 2026 — первый hosted CI
+
+- GitHub Actions run `40231696377` на commit `69f33db` подтвердил Backend tests и Frontend checks, но Isolated live E2E дал `15 passed / 12 skipped / 1 failed`: baseline worker-счётчик был прочитан как loading placeholder, `Number(...)` вернул `NaN`, тогда как после server acknowledgement DOM уже содержал `2`.
+- E2E harness не ослаблен: общий `readNumericCount` сначала ждёт строгий DOM-текст `/^\d+$/`, затем преобразует его в число; исходные проверки exact increments/reload/dedup сохранены. Helper применён ко всем аналогичным worker/QC counts.
+- Фактически проверено на отдельных SQLite/портах, без live demo: frontend typecheck PASS; исходно упавший desktop-сценарий `1 passed`; полный fresh migrated+seeded Playwright `16 passed / 12 intentional skips / 0 failed`. Временно перезаписанные harness PNG восстановлены из clean HEAD. После push нужен новый hosted run; PASS заранее не заявляется.
+
