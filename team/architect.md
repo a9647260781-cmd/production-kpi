@@ -125,3 +125,9 @@
 - Во время isolated E2E найден и исправлен frontend race active POST против recovery status GET для worker/QC pending. Финальный regression требует ноль status GET до reload, затем lost-response recovery и ровно один серверный факт/решение; полный повторный suite прошёл.
 - Следующий шаг: дождаться `FINAL READY` тимлида по README/кейсу/видео, затем staged-only scan, initial commit со служебной one-command identity, проверка clean status. Remote/push и hosted CI без отдельного решения не выполнять.
 
+## 25 октября 2026 — release-ready проверка для GitHub
+
+- По новой явной авторизации проверены Git-visible snapshot и единственный commit: private-key/cloud/GitHub/OpenAI token signatures, absolute user paths, personal email и локальные DB/log/backup/env в tracked-дереве не найдены. `.env.compose.example` и `Demo2026!` — явно маркированные synthetic localhost config/credentials, не секреты.
+- README больше не содержит мгновенно устаревающее утверждение об отсутствии remote; добавлены localhost-only warning, граница hosted CI и явный статус отсутствия open-source license. `.gitattributes` фиксирует endings Windows launch scripts и binary media.
+- Это подготовка публичных исходников, не production rollout и не допуск к недоверенному hosted demo. Remote/push выполняет `/root`; после push нужно проверить первый hosted Actions run.
+
